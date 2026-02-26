@@ -245,35 +245,6 @@
   .sub-question-card.neg-a { border-left-color: var(--accent2); }
   .sub-q-text { font-size: 1.02rem; font-weight: 600; line-height: 1.65; margin-bottom: 12px; }
 
-  /* ── AI RESPONSE ── */
-  .ai-response {
-    background: var(--aged);
-    border-left: 3px solid var(--highlight);
-    padding: 14px 18px;
-    margin-top: 20px;
-    font-size: 0.92rem;
-    line-height: 1.8;
-    color: var(--ink);
-  }
-  .ai-label {
-    font-family: 'Inconsolata', monospace;
-    font-size: 0.56rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted);
-    display: block;
-    margin-bottom: 8px;
-  }
-  .ai-placeholder-note {
-    font-size: 0.72rem;
-    color: var(--muted);
-    font-style: italic;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px dashed #c8bfa8;
-  }
-  .ai-loading { color: var(--muted); font-style: italic; }
-
   /* ── NAV BUTTONS ── */
   .nav-row {
     display: flex;
@@ -477,76 +448,8 @@ const S = {
   neutral: { term: '', description: '' },
   reflection: '',
 
-  aiResponses: {},
-  aiLoading: false,
 };
 
-/* ════════════════════════════════════════════════════════
-   AI INTEGRATION
-   ────────────────────────────────────────────────────────
-   To activate live Socratic feedback:
-   1. Replace null below with your Anthropic API key string
-   2. The key is used only in your local browser session
-      and is never sent anywhere except api.anthropic.com
-   ════════════════════════════════════════════════════════ */
-const ANTHROPIC_API_KEY = null; // ← 'sk-ant-...'
-
-const SYSTEM_PROMPT = `You are a Socratic semiotics tutor helping undergraduate honors students work through a Greimasian semiotic hexagon analysis, following Hébert's framework and interpreted through Fredric Jameson's concept of the political unconscious. Push back gently on term choices. Ask why positions are hard to fill. Point toward the ideological significance of difficult or empty positions. Do not simply affirm — complicate, deepen, question. Be concise: 2–4 sentences. Use the student's own terms in your response. When the source text is a poem, preserve line breaks in any quotations you use from it (do not use slash notation — display verse lines as separate lines).`;
-
-const PLACEHOLDERS = {
-  opposition: `These terms suggest a genuinely structural opposition — not merely a surface contrast, but something the text organizes itself around. Before you continue: is there a version of this opposition the text itself would resist naming? Sometimes what is most revealing about S1 and S2 is what they cannot say <em>about each other</em>.`,
-  notS2: `Notice that Not-S2 is not the same as Term A — it is the loosening of the grip, not the achievement of the contrary position. The fissure is not the subject; it is the condition that makes the subject briefly imaginable. Ask: in your text, does this position have a name, or is it precisely the position that cannot be named within the system's own language?`,
-  notS1: `Hold the deictic grouping that is emerging: Not-S1 — the failure of the subject position — ends up structurally allied with S2, the object position. They are not the same thing, but they serve the same structure. Does your text know this? Does it name this alliance, or does it leave it as the political unconscious of the passage?`,
-  complex: `The complex term names what the text is straining to imagine and what the system cannot permit. Pay careful attention to how your text marks this position: is it idealized, mourned, declared impossible, or destroyed? The mode of its impossibility is where the ideological work happens.`,
-  neutral: `The neutral term is not a resolution — it is a structural absence. The text has no language for this position, which is precisely its significance. Notice who, if anyone, might be writing from here: the neutral term is often the position from which the analysis itself is performed, the position the author occupies by escaping the system's categories.`,
-};
-
-async function getAI(key) {
-  if (!ANTHROPIC_API_KEY) {
-    await new Promise(r => setTimeout(r, 0));
-    return PLACEHOLDERS[key] || null;
-  }
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250929',
-        max_tokens: 300,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: buildMsg(key) }],
-      }),
-    });
-    const data = await resp.json();
-    if (data.content && data.content[0]) return data.content[0].text;
-    return PLACEHOLDERS[key] || 'Unable to reach Claude at this time.';
-  } catch {
-    return PLACEHOLDERS[key] || 'Unable to reach Claude at this time.';
-  }
-}
-
-function buildMsg(key) {
-  const lines = [
-    S.isPoem ? `Poem (preserve line breaks in any quotations):\n${S.passageText.slice(0, 500)}` : `Passage (excerpt): ${S.passageText.slice(0, 500)}`,
-    `S1 (Term A): "${S.s1.term}" — ${S.s1.description}`,
-    `S2 (Term B): "${S.s2.term}" — ${S.s2.description}`,
-  ];
-  if (key === 'notS2' || key === 'notS1' || key === 'complex' || key === 'neutral')
-    lines.push(`Not-S2: "${S.notS2.term}" — ${S.notS2.description}`);
-  if (key === 'notS1' || key === 'complex' || key === 'neutral')
-    lines.push(`Not-S1: "${S.notS1.term}" — ${S.notS1.description}`);
-  if (key === 'complex' || key === 'neutral')
-    lines.push(`Complex term: "${S.complex.term}" — ${S.complex.description}`);
-  if (key === 'neutral')
-    lines.push(`Neutral term: "${S.neutral.term}" — ${S.neutral.description}`);
-  lines.push(`\nThe student just filled in the "${key}" position. Provide 2–4 sentences of Socratic commentary.`);
-  return lines.join('\n');
-}
 
 /* ════════════════════════════════════════════════════════
    NEGATION SUB-QUESTIONS
@@ -688,7 +591,6 @@ function renderOpposition() {
       </div>
     </div>
   </div>
-  ${renderAIBox('opposition')}
   <div class="nav-row">
     <button class="btn btn-ghost" onclick="go(0)">← Back</button>
     <button class="btn btn-primary" id="btn-opp" onclick="saveOpposition()">Continue →</button>
@@ -764,7 +666,6 @@ function renderNegStep({ stepNum, key, title, role, roleColor, cardClass, intro,
     <label class="field-label">Evidence from text (optional)</label>
     <textarea id="f-neg-evid" rows="2" placeholder="Quoted phrase or paraphrase...">${esc(S[key].evidence)}</textarea>
   </div>
-  ${renderAIBox(aiKey)}
   <div class="nav-row">
     <button class="btn btn-ghost" onclick="S.subStep=4;render()">← Revise answers</button>
     <button class="btn btn-primary" onclick="saveNegTerm('${key}','${aiKey}',${backStep})">Continue →</button>
@@ -853,7 +754,6 @@ function renderComplex() {
     <label class="field-label">Description</label>
     <textarea id="f-cx-desc" rows="5" placeholder="What holds both primary terms simultaneously? What is this position's fate in the text — desired, destroyed, briefly imaginable?">${esc(S.complex.description)}</textarea>
   </div>
-  ${renderAIBox('complex')}
   <div class="nav-row">
     <button class="btn btn-ghost" onclick="go(4)">← Back</button>
     <button class="btn btn-primary" id="btn-cx" onclick="saveComplex()">Continue →</button>
@@ -880,7 +780,6 @@ function renderNeutral() {
     <label class="field-label">Description</label>
     <textarea id="f-nt-desc" rows="5" placeholder="What is this position? What makes it unnameable or unthinkable within the text's own terms? Who, if anyone, might write from here?">${esc(S.neutral.description)}</textarea>
   </div>
-  ${renderAIBox('neutral')}
   <div class="nav-row">
     <button class="btn btn-ghost" onclick="go(5)">← Back</button>
     <button class="btn btn-primary" id="btn-nt" onclick="saveNeutral()">Continue →</button>
@@ -930,8 +829,8 @@ function renderReflection() {
     <textarea id="f-reflection" rows="7" placeholder="Write your reflection here.">${esc(S.reflection)}</textarea>
   </div>
   <div class="nav-row">
-    <button class="btn btn-ghost" onclick="go(7)">← Back to review</button>
-    <button class="btn btn-primary" onclick="saveReflection()">Generate my square →</button>
+    <button class="btn btn-ghost" onclick="go(9)">← Back to square</button>
+    <button class="btn btn-primary" onclick="saveReflection()">Update my square →</button>
   </div>`;
 }
 
@@ -947,7 +846,7 @@ function savePassage() {
   go(1);
 }
 
-async function saveOpposition() {
+function saveOpposition() {
   S.s1.term = g('f-s1-term')?.value || '';
   S.s1.description = g('f-s1-desc')?.value || '';
   S.s1.evidence = g('f-s1-evid')?.value || '';
@@ -955,13 +854,9 @@ async function saveOpposition() {
   S.s2.description = g('f-s2-desc')?.value || '';
   S.s2.evidence = g('f-s2-evid')?.value || '';
   go(2); S.subStep = 0;
-  if (!S.aiResponses['opposition']) {
-    const r = await getAI('opposition');
-    if (r) { S.aiResponses['opposition'] = r; render(); }
-  }
 }
 
-async function subNext(key, aiKey) {
+function subNext(key, aiKey) {
   S[key].subs[S.subStep] = g('f-sub')?.value || '';
   if (S.subStep < 4) {
     S.subStep++;
@@ -970,10 +865,6 @@ async function subNext(key, aiKey) {
     S.subStep = 5;
     if (S[key].subs[4] && !S[key].term) S[key].term = S[key].subs[4];
     render();
-    if (!S.aiResponses[aiKey]) {
-      const r = await getAI(aiKey);
-      if (r) { S.aiResponses[aiKey] = r; render(); }
-    }
   }
 }
 
@@ -990,24 +881,16 @@ function saveNegTerm(key, aiKey, backStep) {
   else { go(4); S.subStep = 0; }
 }
 
-async function saveComplex() {
+function saveComplex() {
   S.complex.term = g('f-cx-term')?.value || '';
   S.complex.description = g('f-cx-desc')?.value || '';
   go(6);
-  if (!S.aiResponses['complex']) {
-    const r = await getAI('complex');
-    if (r) { S.aiResponses['complex'] = r; render(); }
-  }
 }
 
-async function saveNeutral() {
+function saveNeutral() {
   S.neutral.term = g('f-nt-term')?.value || '';
   S.neutral.description = g('f-nt-desc')?.value || '';
   go(7);
-  if (!S.aiResponses['neutral']) {
-    const r = await getAI('neutral');
-    if (r) { S.aiResponses['neutral'] = r; render(); }
-  }
 }
 
 function saveReflection() {
@@ -1022,20 +905,6 @@ function saveDeixis() {
 }
 
 function go(n) { S.step = n; render(); }
-
-/* ════════════════════════════════════════════════════════
-   AI RESPONSE BOX
-   ════════════════════════════════════════════════════════ */
-function renderAIBox(key) {
-  const r = S.aiResponses[key];
-  if (!r) return '';
-  const isPlaceholder = !ANTHROPIC_API_KEY;
-  return `<div class="ai-response">
-    <span class="ai-label">Claude's response</span>
-    <div>${r}</div>
-    ${isPlaceholder ? `<div class="ai-placeholder-note">⟡ Placeholder response. Set <code>ANTHROPIC_API_KEY</code> in the script to activate live Socratic feedback.</div>` : ''}
-  </div>`;
-}
 
 /* ════════════════════════════════════════════════════════
    SIDEBAR
