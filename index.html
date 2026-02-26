@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semiotic Hexagon Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inconsolata:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  /* ── SHARED TOKENS (matches Cixous file exactly) ── */
+  :root {
+    --ink: #1a1612;
+    --paper: #f5f0e8;
+    --aged: #e8e0cc;
+    --accent: #8b3a2a;
+    --accent2: #2a5a8b;
+    --muted: #4a4438;
+    --border: #1a1612;
+    --highlight: #d4a853;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── APP SHELL ── */
+  .app-shell { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .summary-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--aged);
+    border-right: 1.5px solid var(--border);
+    padding: 28px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .summary-title {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 14px;
+  }
+  .mini-meta {
+    text-align: center;
+    padding: 6px 4px;
+    font-size: 0.72rem;
+    font-style: italic;
+    color: var(--muted);
+    min-height: 30px;
+    line-height: 1.4;
+  }
+  .mini-meta.filled { color: var(--ink); font-weight: 600; font-style: italic; }
+  .mini-grid {
+    border: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    font-size: 0.7rem;
+  }
+  .mini-cell { padding: 8px 8px; min-height: 56px; }
+  .mini-cell.tl { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .mini-cell.tr { border-bottom: 1px solid var(--border); }
+  .mini-cell.bl { border-right: 1px solid var(--border); }
+  .mini-role {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 3px;
+  }
+  .mini-term { font-weight: 600; font-style: italic; color: var(--muted); font-size: 0.75rem; line-height: 1.3; }
+  .mini-term.filled-acc  { color: var(--accent); }
+  .mini-term.filled-acc2 { color: var(--accent2); }
+  .sidebar-source {
+    margin-top: 18px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .sidebar-source-label {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 4px;
+    font-style: normal;
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main-content { flex: 1; padding: 44px 44px 60px; max-width: 680px; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar { margin-bottom: 28px; }
+  .progress-steps { display: flex; gap: 4px; margin-bottom: 6px; }
+  .progress-step { height: 3px; flex: 1; background: var(--aged); border: 1px solid #c8bfa8; }
+  .progress-step.done { background: var(--muted); border-color: var(--muted); }
+  .progress-step.current { background: var(--accent); border-color: var(--accent); }
+  .progress-label {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.56rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── STEP CARDS ── */
+  .step-label {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .step-title {
+    font-size: 1.8rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: 18px;
+    line-height: 1.2;
+  }
+  .step-sub-role {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    display: block;
+  }
+  .step-instruction {
+    font-size: 0.97rem;
+    color: var(--ink);
+    line-height: 1.85;
+    margin-bottom: 14px;
+  }
+  .step-hint {
+    font-size: 0.87rem;
+    color: var(--muted);
+    line-height: 1.75;
+    font-style: italic;
+    border-left: 2px solid var(--highlight);
+    padding: 4px 0 4px 12px;
+    margin-bottom: 18px;
+  }
+  .def-box {
+    border: 1px solid var(--aged);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 0.87rem;
+  }
+  .def-box-label {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--highlight);
+    display: block;
+    margin-bottom: 5px;
+  }
+  .def-box p { color: var(--muted); line-height: 1.65; }
+  .def-box p + p { margin-top: 6px; }
+  .def-box strong { color: var(--ink); font-weight: 600; }
+
+  /* ── FORM FIELDS ── */
+  .field-group { margin-bottom: 18px; }
+  .field-label {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--border);
+    padding: 6px 0;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1rem;
+    color: var(--ink);
+    outline: none;
+    resize: none;
+  }
+  textarea {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    min-height: 80px;
+    line-height: 1.7;
+  }
+  input[type="text"]::placeholder, textarea::placeholder {
+    color: #b0a898;
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+  .fields-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 4px; }
+  .field-block { border: 1px solid var(--aged); padding: 16px; }
+  .field-block-title {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  /* ── SUB-STEP ── */
+  .sub-progress { display: flex; gap: 6px; align-items: center; margin-bottom: 20px; }
+  .sub-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--aged); border: 1px solid #c8bfa8; }
+  .sub-dot.active { background: var(--accent); border-color: var(--accent); }
+  .sub-dot.done { background: var(--muted); border-color: var(--muted); }
+  .sub-step-label {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+  .sub-question-card {
+    border-left: 3px solid var(--accent);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .sub-question-card.neg-a { border-left-color: var(--accent2); }
+  .sub-q-text { font-size: 1.02rem; font-weight: 600; line-height: 1.65; margin-bottom: 12px; }
+
+  /* ── AI RESPONSE ── */
+  .ai-response {
+    background: var(--aged);
+    border-left: 3px solid var(--highlight);
+    padding: 14px 18px;
+    margin-top: 20px;
+    font-size: 0.92rem;
+    line-height: 1.8;
+    color: var(--ink);
+  }
+  .ai-label {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.56rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .ai-placeholder-note {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #c8bfa8;
+  }
+  .ai-loading { color: var(--muted); font-style: italic; }
+
+  /* ── NAV BUTTONS ── */
+  .nav-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--aged);
+  }
+  .btn {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 9px 20px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn-primary { background: var(--ink); color: var(--paper); }
+  .btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+  .btn-ghost { border-color: var(--muted); color: var(--muted); }
+  .btn-ghost:hover { background: var(--muted); color: var(--paper); border-color: var(--muted); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn:disabled:hover { background: transparent; color: var(--ink); }
+  .btn-primary:disabled:hover { background: var(--ink); color: var(--paper); }
+
+  /* ── DEICTIC INTERSTITIAL ── */
+  .deixis-reveal { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 22px 0; }
+  .deixis-group { padding: 16px 14px; border: 1px solid; }
+  .deixis-group.pos { border-color: rgba(139,58,42,0.4); background: rgba(139,58,42,0.04); }
+  .deixis-group.neg { border-color: rgba(42,90,139,0.4); background: rgba(42,90,139,0.04); }
+  .dg-label {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .dg-term { font-size: 0.95rem; font-weight: 600; font-style: italic; margin-bottom: 3px; }
+  .dg-sub { font-size: 0.72rem; color: var(--muted); margin-bottom: 10px; }
+  .dg-note {
+    font-size: 0.87rem;
+    color: var(--ink);
+    line-height: 1.7;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+  }
+
+  /* ── REVIEW GRID ── */
+  .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+  .review-cell { border: 1px solid var(--aged); padding: 12px; }
+  .review-cell-label {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.54rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+    display: block;
+  }
+  .review-cell-term { font-size: 0.95rem; font-weight: 600; font-style: italic; margin-bottom: 4px; }
+  .review-cell-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+  /* ══════════════════════════════════════
+     OUTPUT — mirrors Cixous file exactly
+     ══════════════════════════════════════ */
+  .page { max-width: 820px; margin: 0 auto; }
+  .doc-header { margin-bottom: 36px; padding-bottom: 20px; border-bottom: 2px solid var(--ink); }
+  .doc-header h1 { font-size: 1.1rem; font-weight: 400; font-style: italic; margin-bottom: 4px; }
+  .doc-header .source { font-family: 'Inconsolata', monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .doc-header .opposition { font-size: 0.9rem; margin-top: 10px; color: var(--muted); }
+  .doc-header .opposition strong { color: var(--ink); font-style: italic; }
+  .passage { background: var(--aged); border-left: 3px solid var(--accent); padding: 16px 20px; font-style: italic; font-size: 0.88rem; line-height: 1.8; color: var(--ink); margin-bottom: 36px; }
+  .passage-label { font-style: normal; font-family: 'Inconsolata', monospace; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
+  .meta-top { text-align: center; margin-bottom: 10px; }
+  .meta-label { font-family: 'Inconsolata', monospace; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 4px; }
+  .meta-label .num { color: var(--highlight); margin-right: 4px; }
+  .meta-term { font-size: 1.05rem; font-weight: 600; font-style: italic; color: var(--ink); }
+  .meta-sub { font-size: 0.87rem; color: var(--muted); margin-top: 3px; font-style: italic; line-height: 1.6; }
+  .square-body { border: 1.5px solid var(--border); position: relative; padding: 0; align-self: stretch; }
+  .square-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 320px 320px; }
+  .sq-cell { padding: 22px 20px; box-sizing: border-box; }
+  .sq-cell.tl { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .sq-cell.tr { border-bottom: 1px solid var(--border); }
+  .sq-cell.bl { border-right: 1px solid var(--border); }
+  .cell-num { font-family: 'Inconsolata', monospace; font-size: 0.6rem; color: var(--highlight); display: block; margin-bottom: 4px; letter-spacing: 0.08em; }
+  .cell-role { font-family: 'Inconsolata', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px; }
+  .cell-term { font-size: 1.1rem; font-weight: 600; font-style: italic; line-height: 1.3; margin-bottom: 7px; }
+  .sq-cell.tl .cell-term { color: var(--accent); }
+  .sq-cell.tr .cell-term { color: var(--accent2); }
+  .sq-cell.bl .cell-term { color: var(--accent2); }
+  .sq-cell.br .cell-term { color: var(--accent); }
+  .cell-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+  .cell-evidence { font-size: 0.84rem; color: var(--ink); font-style: italic; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); line-height: 1.5; }
+  .diagonals { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  .deixis-labels { display: flex; justify-content: space-between; align-items: stretch; position: relative; }
+  .deixis-side { width: 110px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .deixis-text { font-family: 'Inconsolata', monospace; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; writing-mode: vertical-rl; transform: rotate(180deg); padding: 8px 4px; border: 1px solid; }
+  .deixis-text.pos { color: var(--accent); border-color: rgba(139,58,42,0.3); background: rgba(139,58,42,0.05); }
+  .deixis-text.neg { color: var(--accent2); border-color: rgba(42,90,139,0.3); background: rgba(42,90,139,0.05); }
+  .meta-bottom { text-align: center; margin-top: 10px; }
+  .relations { margin-bottom: 36px; }
+  .relations-title { font-family: 'Inconsolata', monospace; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--aged); }
+  .rel-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 10px; }
+  .rel-nums { font-family: 'Inconsolata', monospace; font-size: 0.7rem; color: var(--highlight); min-width: 60px; padding-top: 1px; font-weight: bold; }
+  .rel-type { font-size: 0.82rem; font-weight: 600; color: var(--ink); min-width: 110px; }
+  .rel-desc-text { font-size: 0.88rem; color: var(--muted); line-height: 1.5; }
+  .analysis { border: 1px solid var(--aged); padding: 24px 28px; margin-bottom: 28px; }
+  .analysis h3 { font-size: 1rem; font-weight: 400; font-style: italic; color: var(--accent); margin-bottom: 14px; }
+  .analysis p { font-size: 0.94rem; color: var(--ink); line-height: 1.8; margin-bottom: 12px; }
+  .analysis p:last-child { margin-bottom: 0; }
+  .output-toolbar { display: flex; gap: 12px; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--aged); align-items: center; flex-wrap: wrap; }
+
+  /* ── PRINT ── */
+  @media print {
+    .app-shell { display: block; }
+    .summary-sidebar, #input-flow, .output-toolbar, .nav-row { display: none !important; }
+    .main-content { padding: 0; max-width: 100%; }
+    body { background: white; padding: 0; }
+    #output { display: block !important; }
+    .page { max-width: 100%; }
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 680px) {
+    .app-shell { flex-direction: column; }
+    .summary-sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1.5px solid var(--border); padding: 16px; }
+    .mini-grid { font-size: 0.65rem; }
+    .main-content { padding: 28px 18px 48px; }
+    .fields-2col { grid-template-columns: 1fr; }
+    .deixis-reveal { grid-template-columns: 1fr; }
+    .review-grid { grid-template-columns: 1fr; }
+    .deixis-side { width: 28px; }
+    .square-grid { grid-template-rows: 180px 180px; }
+    .sq-cell { padding: 14px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="summary-sidebar">
+    <span class="summary-title">Your Square</span>
+    <div class="mini-meta" id="sum-complex">Complex term</div>
+    <div class="mini-grid">
+      <div class="mini-cell tl">
+        <span class="mini-role">S1 · Term A</span>
+        <span class="mini-term" id="sum-s1-term">—</span>
+      </div>
+      <div class="mini-cell tr">
+        <span class="mini-role">S2 · Term B</span>
+        <span class="mini-term" id="sum-s2-term">—</span>
+      </div>
+      <div class="mini-cell bl">
+        <span class="mini-role">Not-S2 · Not-B</span>
+        <span class="mini-term" id="sum-notb-term">—</span>
+      </div>
+      <div class="mini-cell br">
+        <span class="mini-role">Not-S1 · Not-A</span>
+        <span class="mini-term" id="sum-nota-term">—</span>
+      </div>
+    </div>
+    <div class="mini-meta" id="sum-neutral">Neutral term</div>
+    <div class="sidebar-source">
+      <span class="sidebar-source-label">Source</span>
+      <span id="sum-source">—</span>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main-content">
+    <div id="input-flow"></div>
+    <div id="output" style="display:none;"></div>
+  </main>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════════════════════ */
+const S = {
+  step: 0,
+  subStep: 0,
+
+  passageText: '', passageTitle: '', passageAuthor: '', passageSource: '', isPoem: false,
+  deixis: { posLabel: '', negLabel: '' },
+
+  s1:    { term: '', description: '', evidence: '' },
+  s2:    { term: '', description: '', evidence: '' },
+  notS2: { term: '', description: '', evidence: '', subs: ['','','','',''] },
+  notS1: { term: '', description: '', evidence: '', subs: ['','','','',''] },
+  complex: { term: '', description: '' },
+  neutral: { term: '', description: '' },
+  reflection: '',
+
+  aiResponses: {},
+  aiLoading: false,
+};
+
+/* ════════════════════════════════════════════════════════
+   AI INTEGRATION
+   ────────────────────────────────────────────────────────
+   To activate live Socratic feedback:
+   1. Replace null below with your Anthropic API key string
+   2. The key is used only in your local browser session
+      and is never sent anywhere except api.anthropic.com
+   ════════════════════════════════════════════════════════ */
+const ANTHROPIC_API_KEY = null; // ← 'sk-ant-...'
+
+const SYSTEM_PROMPT = `You are a Socratic semiotics tutor helping undergraduate honors students work through a Greimasian semiotic hexagon analysis, following Hébert's framework and interpreted through Fredric Jameson's concept of the political unconscious. Push back gently on term choices. Ask why positions are hard to fill. Point toward the ideological significance of difficult or empty positions. Do not simply affirm — complicate, deepen, question. Be concise: 2–4 sentences. Use the student's own terms in your response. When the source text is a poem, preserve line breaks in any quotations you use from it (do not use slash notation — display verse lines as separate lines).`;
+
+const PLACEHOLDERS = {
+  opposition: `These terms suggest a genuinely structural opposition — not merely a surface contrast, but something the text organizes itself around. Before you continue: is there a version of this opposition the text itself would resist naming? Sometimes what is most revealing about S1 and S2 is what they cannot say <em>about each other</em>.`,
+  notS2: `Notice that Not-S2 is not the same as Term A — it is the loosening of the grip, not the achievement of the contrary position. The fissure is not the subject; it is the condition that makes the subject briefly imaginable. Ask: in your text, does this position have a name, or is it precisely the position that cannot be named within the system's own language?`,
+  notS1: `Hold the deictic grouping that is emerging: Not-S1 — the failure of the subject position — ends up structurally allied with S2, the object position. They are not the same thing, but they serve the same structure. Does your text know this? Does it name this alliance, or does it leave it as the political unconscious of the passage?`,
+  complex: `The complex term names what the text is straining to imagine and what the system cannot permit. Pay careful attention to how your text marks this position: is it idealized, mourned, declared impossible, or destroyed? The mode of its impossibility is where the ideological work happens.`,
+  neutral: `The neutral term is not a resolution — it is a structural absence. The text has no language for this position, which is precisely its significance. Notice who, if anyone, might be writing from here: the neutral term is often the position from which the analysis itself is performed, the position the author occupies by escaping the system's categories.`,
+};
+
+async function getAI(key) {
+  if (!ANTHROPIC_API_KEY) {
+    await new Promise(r => setTimeout(r, 0));
+    return PLACEHOLDERS[key] || null;
+  }
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6-20250929',
+        max_tokens: 300,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: buildMsg(key) }],
+      }),
+    });
+    const data = await resp.json();
+    if (data.content && data.content[0]) return data.content[0].text;
+    return PLACEHOLDERS[key] || 'Unable to reach Claude at this time.';
+  } catch {
+    return PLACEHOLDERS[key] || 'Unable to reach Claude at this time.';
+  }
+}
+
+function buildMsg(key) {
+  const lines = [
+    S.isPoem ? `Poem (preserve line breaks in any quotations):\n${S.passageText.slice(0, 500)}` : `Passage (excerpt): ${S.passageText.slice(0, 500)}`,
+    `S1 (Term A): "${S.s1.term}" — ${S.s1.description}`,
+    `S2 (Term B): "${S.s2.term}" — ${S.s2.description}`,
+  ];
+  if (key === 'notS2' || key === 'notS1' || key === 'complex' || key === 'neutral')
+    lines.push(`Not-S2: "${S.notS2.term}" — ${S.notS2.description}`);
+  if (key === 'notS1' || key === 'complex' || key === 'neutral')
+    lines.push(`Not-S1: "${S.notS1.term}" — ${S.notS1.description}`);
+  if (key === 'complex' || key === 'neutral')
+    lines.push(`Complex term: "${S.complex.term}" — ${S.complex.description}`);
+  if (key === 'neutral')
+    lines.push(`Neutral term: "${S.neutral.term}" — ${S.neutral.description}`);
+  lines.push(`\nThe student just filled in the "${key}" position. Provide 2–4 sentences of Socratic commentary.`);
+  return lines.join('\n');
+}
+
+/* ════════════════════════════════════════════════════════
+   NEGATION SUB-QUESTIONS
+   ════════════════════════════════════════════════════════ */
+function negSubs(termName, letter, oppName) {
+  return [
+    {
+      q: `Restate Term ${letter} in your own words. What does it actually assert — what kind of position in the text does it name?`,
+      ph: `e.g. Term ${letter} names the position where...`,
+    },
+    {
+      q: `What would it mean to simply <em>not be</em> Term ${letter}? Not to oppose it, not to fight it — just to exit its position entirely. What does that space look like?`,
+      ph: `e.g. To not be Term ${letter} would mean...`,
+    },
+    {
+      q: `Is that just ${oppName}? If your answer sounds like the opposite term, what would make it <em>different</em> — what would mark it as a genuinely distinct position?`,
+      ph: `e.g. It differs from ${oppName} because...`,
+    },
+    {
+      q: `Not-${letter} is the <em>failure or absence</em> of ${letter}, not simply its contrary. Think of a moment in the text where ${letter}'s logic loosens or breaks down — without simply collapsing into the other primary term. What is happening there?`,
+      ph: `e.g. The moment where...`,
+    },
+    {
+      q: `Now name it. What label best captures this position — Not-${letter}, the negation of <em>${termName || 'Term '+letter}</em>?`,
+      ph: `e.g. The Fissure / The Silenced / The Threshold...`,
+    },
+  ];
+}
+
+/* ════════════════════════════════════════════════════════
+   RENDER
+   ════════════════════════════════════════════════════════ */
+const g = id => document.getElementById(id);
+
+function render() {
+  updateSidebar();
+  const flow = g('input-flow');
+  const out = g('output');
+
+  if (S.step === 9) {
+    flow.style.display = 'none';
+    out.style.display = 'block';
+    renderOutput();
+    return;
+  }
+
+  flow.style.display = 'block';
+  out.style.display = 'none';
+
+  const stepNames = ['Passage', 'Opposition', 'Not-B', 'Not-A', 'Deixis', 'Complex', 'Neutral', 'Review', 'Reflection'];
+  const barHtml = `<div class="progress-bar">
+    <div class="progress-steps">
+      ${stepNames.map((n,i) => `<div class="progress-step ${i<S.step?'done':(i===S.step?'current':'')}" title="${n}"></div>`).join('')}
+    </div>
+    <div class="progress-label">Step ${S.step+1} of ${stepNames.length} — ${stepNames[S.step]||''}</div>
+  </div>`;
+
+  const stepFns = [
+    renderPassage, renderOpposition, renderNegB, renderNegA,
+    renderDeixis, renderComplex, renderNeutral, renderReview, renderReflection
+  ];
+  flow.innerHTML = barHtml + (stepFns[S.step] ? stepFns[S.step]() : '');
+}
+
+/* ── Step 0: Passage ── */
+function renderPassage() {
+  return `<span class="step-label">Step 1 of 9</span>
+  <h2 class="step-title">Enter your source passage</h2>
+  <p class="step-instruction">Paste the passage you will analyze, and fill in the source information below. This text will appear at the top of your finished square.</p>
+  <p class="step-hint">Choose a passage dense enough to sustain analysis — one where two clearly opposed positions are present, and where the text struggles to hold them apart or to imagine a position outside them.</p>
+  <div class="field-group">
+    <label class="field-label">Passage text</label>
+    <textarea id="f-passage" rows="7" placeholder="Paste your passage here...">${esc(S.passageText)}</textarea>
+  </div>
+  <div class="fields-2col">
+    <div class="field-group">
+      <label class="field-label">Title of work</label>
+      <input type="text" id="f-title" placeholder='e.g. "The Laugh of the Medusa"' value="${esc(S.passageTitle)}">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Author</label>
+      <input type="text" id="f-author" placeholder="e.g. Hélène Cixous" value="${esc(S.passageAuthor)}">
+    </div>
+  </div>
+  <div class="field-group">
+    <label class="field-label">Source / publication (optional)</label>
+    <input type="text" id="f-source" placeholder="e.g. Signs, Vol. 1, No. 4 (1975)" value="${esc(S.passageSource)}">
+  </div>
+  <div class="field-group" style="margin-top:4px;">
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--muted);">
+      <input type="checkbox" id="f-is-poem" ${S.isPoem ? 'checked' : ''} style="width:auto;border:none;border-bottom:none;padding:0;accent-color:var(--accent);">
+      <span>This is a poem — preserve line breaks (MLA verse format)</span>
+    </label>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-primary" onclick="savePassage()">Continue →</button>
+  </div>`;
+}
+
+/* ── Step 1: Primary Opposition ── */
+function renderOpposition() {
+  return `<span class="step-label">Step 2 of 9</span>
+  <h2 class="step-title">The Primary Opposition</h2>
+  <p class="step-instruction">Identify the two contrary terms that organize the text's deepest opposition. These are the conceptual poles the text is structured around — the tension it cannot resolve.</p>
+  <div class="def-box">
+    <span class="def-box-label">Contrariety vs. Contradiction (Hébert)</span>
+    <p><strong>Contrary terms</strong> (S1 vs. S2) are opposed but not mutually exclusive — you can imagine holding both at once (the complex term). <strong>Contradictory terms</strong> (S1 vs. Not-S1) are logically exclusive: to be Not-S1 is to have failed or exited S1 entirely.</p>
+  </div>
+  <p class="step-hint">Ask: what is the text <em>fundamentally about</em> in terms of opposed values, positions, or states of being? What would dissolve — structurally — if this opposition were resolved?</p>
+  <div class="fields-2col">
+    <div class="field-block">
+      <span class="field-block-title" style="color:var(--accent);">1. Term A · S1 · Positive Deixis</span>
+      <div class="field-group">
+        <label class="field-label">Term name</label>
+        <input type="text" id="f-s1-term" placeholder="e.g. Woman-as-Subject" value="${esc(S.s1.term)}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Description</label>
+        <textarea id="f-s1-desc" rows="3" placeholder="What does this position assert or name in the text?">${esc(S.s1.description)}</textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Evidence from text (optional)</label>
+        <textarea id="f-s1-evid" rows="2" placeholder="Quoted phrase or paraphrase...">${esc(S.s1.evidence)}</textarea>
+      </div>
+    </div>
+    <div class="field-block">
+      <span class="field-block-title" style="color:var(--accent2);">2. Term B · S2 · Negative Deixis</span>
+      <div class="field-group">
+        <label class="field-label">Term name</label>
+        <input type="text" id="f-s2-term" placeholder="e.g. Woman-as-Object" value="${esc(S.s2.term)}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Description</label>
+        <textarea id="f-s2-desc" rows="3" placeholder="What does this position assert or name in the text?">${esc(S.s2.description)}</textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Evidence from text (optional)</label>
+        <textarea id="f-s2-evid" rows="2" placeholder="Quoted phrase or paraphrase...">${esc(S.s2.evidence)}</textarea>
+      </div>
+    </div>
+  </div>
+  ${renderAIBox('opposition')}
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="go(0)">← Back</button>
+    <button class="btn btn-primary" id="btn-opp" onclick="saveOpposition()">Continue →</button>
+  </div>`;
+}
+
+/* ── Step 2: Negation of B ── */
+function renderNegB() {
+  const label = S.s2.term || 'Term B';
+  const subs = negSubs(label, 'B', S.s1.term || 'Term A / S1');
+  return renderNegStep({
+    stepNum: 3, key: 'notS2', title: 'Negation of Term B',
+    role: 'Not-S2 · Positive Deixis', roleColor: 'var(--accent2)',
+    cardClass: '',
+    intro: `<p class="step-instruction">You defined Term B as: <em>"${esc(label)}"</em>. Now find its negation — Not-B (Not-S2). This is not Term A. It is the <strong>failure, absence, or exit</strong> from the Term B position without having arrived at the Term A position.</p>`,
+    hint: `Not-B and Term A are not the same. Term A is the fully achieved contrary position; Not-B is the loosening of B's grip — a position that has exited B but has not yet become A. It may be transitional, ephemeral, or unsustainable.`,
+    subs, backStep: 1, aiKey: 'notS2',
+  });
+}
+
+/* ── Step 3: Negation of A ── */
+function renderNegA() {
+  const label = S.s1.term || 'Term A';
+  const subs = negSubs(label, 'A', S.s2.term || 'Term B / S2');
+  return renderNegStep({
+    stepNum: 4, key: 'notS1', title: 'Negation of Term A',
+    role: 'Not-S1 · Negative Deixis', roleColor: 'var(--accent)',
+    cardClass: 'neg-a',
+    intro: `<p class="step-instruction">You defined Term A as: <em>"${esc(label)}"</em>. Now find its negation — Not-A (Not-S1). This is not Term B. It is the <strong>failure or destruction</strong> of the subject position — not merely objecthood (that is Term B), but the active foreclosure of subjectivity.</p>`,
+    hint: `Not-A and Term B are structurally related but not identical. Term B is the enforced object position; Not-A is what happens when the subject position is actively destroyed — not refused but eliminated. Pay attention to how your text marks this violence.`,
+    subs, backStep: 2, aiKey: 'notS1',
+  });
+}
+
+function renderNegStep({ stepNum, key, title, role, roleColor, cardClass, intro, hint, subs, backStep, aiKey }) {
+  if (S.subStep < 5) {
+    const sub = subs[S.subStep];
+    const dots = subs.map((_, i) => `<div class="sub-dot ${i<S.subStep?'done':(i===S.subStep?'active':'')}"></div>`).join('');
+    return `<span class="step-label">Step ${stepNum} of 9</span>
+    <h2 class="step-title">${title}</h2>
+    <span class="step-sub-role" style="color:${roleColor};">${role}</span>
+    ${intro}
+    <div class="sub-progress">${dots}<span class="sub-step-label">Question ${S.subStep+1} of 5</span></div>
+    <p class="step-hint">${hint}</p>
+    <div class="sub-question-card ${cardClass}">
+      <p class="sub-q-text">${sub.q}</p>
+      <div class="field-group">
+        <textarea id="f-sub" rows="3" placeholder="${sub.ph}">${esc(S[key].subs[S.subStep])}</textarea>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="subBack('${key}',${backStep})">← Back</button>
+      <button class="btn btn-primary" onclick="subNext('${key}','${aiKey}')">
+        ${S.subStep < 4 ? 'Next question →' : 'Name the position →'}
+      </button>
+    </div>`;
+  }
+
+  // Sub-questions done: name-the-term screen
+  return `<span class="step-label">Step ${stepNum} of 9 — Name the Position</span>
+  <h2 class="step-title">${title}</h2>
+  <span class="step-sub-role" style="color:${roleColor};">${role}</span>
+  <p class="step-instruction">Based on your reasoning through the five questions, give this position a name and a description.</p>
+  <div class="field-group">
+    <label class="field-label">Term name</label>
+    <input type="text" id="f-neg-term" placeholder="e.g. The Fissure / The Silenced" value="${esc(S[key].term)}">
+  </div>
+  <div class="field-group">
+    <label class="field-label">Description</label>
+    <textarea id="f-neg-desc" rows="4" placeholder="What does this position name? How does it differ from both primary terms?">${esc(S[key].description)}</textarea>
+  </div>
+  <div class="field-group">
+    <label class="field-label">Evidence from text (optional)</label>
+    <textarea id="f-neg-evid" rows="2" placeholder="Quoted phrase or paraphrase...">${esc(S[key].evidence)}</textarea>
+  </div>
+  ${renderAIBox(aiKey)}
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="S.subStep=4;render()">← Revise answers</button>
+    <button class="btn btn-primary" onclick="saveNegTerm('${key}','${aiKey}',${backStep})">Continue →</button>
+  </div>`;
+}
+
+/* ── Step 4: Deictic Interstitial ── */
+function renderDeixis() {
+  const s1 = S.s1.term || 'Term A (S1)';
+  const s2 = S.s2.term || 'Term B (S2)';
+  const nb = S.notS2.term || 'Not-B (Not-S2)';
+  const na = S.notS1.term || 'Not-A (Not-S1)';
+  return `<span class="step-label">Step 5 of 9 — Interstitial</span>
+  <h2 class="step-title">The Deictic Groupings</h2>
+  <p class="step-instruction">Before you continue, pause here. Your four positions sort themselves into two <strong>deictic groups</strong> — and the grouping is designed to surprise you.</p>
+  <div class="deixis-reveal">
+    <div class="deixis-group pos">
+      <span class="dg-label" style="color:var(--accent);">7. (= 1+3) · Positive Deixis</span>
+      <div style="font-size:1.05rem;font-weight:600;font-style:italic;color:var(--accent);margin-bottom:14px;line-height:1.3;">${esc(s1)} <span style="font-weight:300;font-size:0.85rem;">+</span> ${esc(nb)}</div>
+      <div class="dg-term" style="color:var(--accent);">${esc(s1)}</div>
+      <div class="dg-sub">S1 · Term A</div>
+      <div class="dg-term" style="color:var(--accent);">${esc(nb)}</div>
+      <div class="dg-sub">Not-S2 · Not-B</div>
+      <div class="dg-note">These are <em>ideological allies</em>: <strong>${esc(nb)}</strong> — the exit from <em>${esc(s2)}</em>'s grip — is the precondition for <strong>${esc(s1)}</strong>. It is the opening that makes the subject position briefly imaginable.</div>
+    </div>
+    <div class="deixis-group neg">
+      <span class="dg-label" style="color:var(--accent2);">8. (= 2+4) · Negative Deixis</span>
+      <div style="font-size:1.05rem;font-weight:600;font-style:italic;color:var(--accent2);margin-bottom:14px;line-height:1.3;">${esc(s2)} <span style="font-weight:300;font-size:0.85rem;">+</span> ${esc(na)}</div>
+      <div class="dg-term" style="color:var(--accent2);">${esc(s2)}</div>
+      <div class="dg-sub">S2 · Term B</div>
+      <div class="dg-term" style="color:var(--accent2);">${esc(na)}</div>
+      <div class="dg-sub">Not-S1 · Not-A</div>
+      <div class="dg-note"><strong>This is the surprise:</strong> <strong>${esc(na)}</strong> — the failure of <em>${esc(s1)}</em> — ends up allied with <strong>${esc(s2)}</strong>. They are not the same, but they serve the same structure.</div>
+    </div>
+  </div>
+  <div class="def-box">
+    <span class="def-box-label">Jameson's question</span>
+    <p>Why do the enforcers of <em>${esc(s2)}</em> and the destroyers of <em>${esc(s1)}</em> end up on the same side? What does this alignment reveal about the text's political unconscious — about what it structurally cannot imagine resolving?</p>
+  </div>
+
+  <p class="step-instruction" style="margin-top:4px;">Now give each alliance a name. What would you call these two groupings, taken as a whole?</p>
+  <p class="step-hint">These names will appear on your finished square. They can be analytical labels (e.g. <em>Forces of Opening</em> / <em>Forces of Closure</em>), thematic phrases, or terms drawn directly from your text.</p>
+
+  <div class="fields-2col" style="margin-bottom:8px;">
+    <div class="field-block" style="border-color:rgba(139,58,42,0.3);">
+      <span class="field-block-title" style="color:var(--accent);">Name for Position 7 — Positive Deixis</span>
+      <div style="font-size:0.78rem;color:var(--muted);font-style:italic;margin-bottom:10px;">${esc(s1)} + ${esc(nb)}</div>
+      <div class="field-group" style="margin-bottom:0;">
+        <label class="field-label">Your label for this alliance</label>
+        <input type="text" id="f-pos-label" placeholder="e.g. Forces of Opening" value="${esc(S.deixis.posLabel)}">
+      </div>
+    </div>
+    <div class="field-block" style="border-color:rgba(42,90,139,0.3);">
+      <span class="field-block-title" style="color:var(--accent2);">Name for Position 8 — Negative Deixis</span>
+      <div style="font-size:0.78rem;color:var(--muted);font-style:italic;margin-bottom:10px;">${esc(s2)} + ${esc(na)}</div>
+      <div class="field-group" style="margin-bottom:0;">
+        <label class="field-label">Your label for this alliance</label>
+        <input type="text" id="f-neg-label" placeholder="e.g. Forces of Closure" value="${esc(S.deixis.negLabel)}">
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="S.step=3;S.subStep=5;render()">← Back</button>
+    <button class="btn btn-primary" onclick="saveDeixis()">Continue to Complex Term →</button>
+  </div>`;
+}
+
+/* ── Step 5: Complex Term ── */
+function renderComplex() {
+  return `<span class="step-label">Step 6 of 9</span>
+  <h2 class="step-title">The Complex Term</h2>
+  <span class="step-sub-role" style="color:var(--highlight);">5. (= S1 + S2) · Above the Square</span>
+  <p class="step-instruction">The complex term holds <em>both</em> S1 and S2 simultaneously — not as synthesis or compromise, but as paradox. It is the figure the text is straining to imagine and that the system cannot permit.</p>
+  <div class="def-box">
+    <span class="def-box-label">Hébert on the Complex Term</span>
+    <p>The complex term (S1+S2) is "both A and B at once" — a position that collapses the categorical distinctions the system depends on. Its inhabitants are typically marked as impossible, monstrous, utopian, or briefly imaginable only in exceptional circumstances.</p>
+  </div>
+  <p class="step-hint">In your text: what figure or position holds both <em>${esc(S.s1.term)||'S1'}</em> and <em>${esc(S.s2.term)||'S2'}</em> simultaneously? What does the text <em>do</em> with this figure — idealize it, destroy it, mourn it, declare it impossible?</p>
+  <p class="step-hint">Ask: "What in the text is straining toward this paradox?"</p>
+  <div class="field-group">
+    <label class="field-label">Complex term name</label>
+    <input type="text" id="f-cx-term" placeholder='e.g. The "Impossible" Subject' value="${esc(S.complex.term)}">
+  </div>
+  <div class="field-group">
+    <label class="field-label">Description</label>
+    <textarea id="f-cx-desc" rows="5" placeholder="What holds both primary terms simultaneously? What is this position's fate in the text — desired, destroyed, briefly imaginable?">${esc(S.complex.description)}</textarea>
+  </div>
+  ${renderAIBox('complex')}
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="go(4)">← Back</button>
+    <button class="btn btn-primary" id="btn-cx" onclick="saveComplex()">Continue →</button>
+  </div>`;
+}
+
+/* ── Step 6: Neutral Term ── */
+function renderNeutral() {
+  return `<span class="step-label">Step 7 of 9</span>
+  <h2 class="step-title">The Neutral Term</h2>
+  <span class="step-sub-role" style="color:var(--highlight);">6. (= Not-S1 + Not-S2) · Below the Square</span>
+  <p class="step-instruction">The neutral term is the position that is neither S1, nor S2, nor either of their negations. It is what the system structurally <em>cannot think</em> — the outside, the unrepresentable, the political unconscious made visible as absence.</p>
+  <div class="def-box">
+    <span class="def-box-label">Hébert on the Neutral Term</span>
+    <p>The neutral term is the position outside the square's logic entirely. It is often harder to name than any of the four main terms — and that difficulty is not a failure of the analysis. It is the analysis's most important finding.</p>
+  </div>
+  <p class="step-hint">Sit with the difficulty. The neutral term is not a resolution — it is a structural absence. What position would someone occupy if they were <em>entirely outside the system</em> the text describes? What does the text have no language for?</p>
+  <p class="step-hint">Ask: "What does the difficulty of naming this reveal about the limits of what this text's ideology can imagine?"</p>
+  <div class="field-group">
+    <label class="field-label">Neutral term name</label>
+    <input type="text" id="f-nt-term" placeholder="e.g. The Unrepresentable / Outside the Machine" value="${esc(S.neutral.term)}">
+  </div>
+  <div class="field-group">
+    <label class="field-label">Description</label>
+    <textarea id="f-nt-desc" rows="5" placeholder="What is this position? What makes it unnameable or unthinkable within the text's own terms? Who, if anyone, might write from here?">${esc(S.neutral.description)}</textarea>
+  </div>
+  ${renderAIBox('neutral')}
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="go(5)">← Back</button>
+    <button class="btn btn-primary" id="btn-nt" onclick="saveNeutral()">Continue →</button>
+  </div>`;
+}
+
+/* ── Step 7: Review ── */
+function renderReview() {
+  const cells = [
+    { label:'5. Complex Term',   term: S.complex.term, desc: S.complex.description, color: 'var(--highlight)' },
+    { label:'1. Term A (S1)',    term: S.s1.term,       desc: S.s1.description,       color: 'var(--accent)' },
+    { label:'2. Term B (S2)',    term: S.s2.term,       desc: S.s2.description,       color: 'var(--accent2)' },
+    { label:'3. Not-B (Not-S2)', term: S.notS2.term,    desc: S.notS2.description,    color: 'var(--accent2)' },
+    { label:'4. Not-A (Not-S1)', term: S.notS1.term,    desc: S.notS1.description,    color: 'var(--accent)' },
+    { label:'6. Neutral Term',   term: S.neutral.term,  desc: S.neutral.description,  color: 'var(--highlight)' },
+  ];
+  const grid = cells.map(c => `
+    <div class="review-cell">
+      <span class="review-cell-label">${c.label}</span>
+      <div class="review-cell-term" style="color:${c.color};">${c.term || '—'}</div>
+      <div class="review-cell-desc">${c.desc ? c.desc.slice(0,100)+(c.desc.length>100?'…':'') : '—'}</div>
+    </div>`).join('');
+  return `<span class="step-label">Step 8 of 9</span>
+  <h2 class="step-title">Review Your Analysis</h2>
+  <p class="step-instruction">Review your six positions before generating the final square. Use the Back button to revise any step.</p>
+  <div class="review-grid">${grid}</div>
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="go(6)">← Back</button>
+    <button class="btn btn-primary" onclick="go(9)">Generate my square →</button>
+  </div>`;
+}
+
+/* ── Step 8: Reflection ── */
+function renderReflection() {
+  return `<span class="step-label">Step 9 of 9</span>
+  <h2 class="step-title">Reflection</h2>
+  <p class="step-instruction">You've reviewed your full hexagon. Now write a brief analytical reflection (3–6 sentences) using the prompts below. This will appear as the <em>Analytical Notes</em> section of your finished square.</p>
+  <div class="def-box">
+    <span class="def-box-label">Jamesonian prompts — address one or more:</span>
+    <p style="margin-bottom:8px;">1. Where is the text's <strong>political unconscious</strong> located — which position does the text most struggle to fill, name, or represent, and what does that struggle reveal?</p>
+    <p style="margin-bottom:8px;">2. What is <strong>significant about the deictic groupings</strong>? Does the alliance between S2 and Not-S1 reveal something about the ideology operating in this text?</p>
+    <p style="margin-bottom:8px;">3. What is the text doing with the <strong>complex term</strong>? Is it desired, destroyed, mourned, idealized?</p>
+    <p>4. What does the <strong>difficulty of naming the neutral term</strong> reveal about the limits of what this text can imagine?</p>
+  </div>
+  <div class="field-group">
+    <label class="field-label">Your analytical reflection</label>
+    <textarea id="f-reflection" rows="7" placeholder="Write your reflection here.">${esc(S.reflection)}</textarea>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="go(7)">← Back to review</button>
+    <button class="btn btn-primary" onclick="saveReflection()">Generate my square →</button>
+  </div>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   SAVE HANDLERS
+   ════════════════════════════════════════════════════════ */
+function savePassage() {
+  S.passageText   = g('f-passage')?.value || '';
+  S.passageTitle  = g('f-title')?.value || '';
+  S.passageAuthor = g('f-author')?.value || '';
+  S.passageSource = g('f-source')?.value || '';
+  S.isPoem        = g('f-is-poem')?.checked || false;
+  go(1);
+}
+
+async function saveOpposition() {
+  S.s1.term = g('f-s1-term')?.value || '';
+  S.s1.description = g('f-s1-desc')?.value || '';
+  S.s1.evidence = g('f-s1-evid')?.value || '';
+  S.s2.term = g('f-s2-term')?.value || '';
+  S.s2.description = g('f-s2-desc')?.value || '';
+  S.s2.evidence = g('f-s2-evid')?.value || '';
+  go(2); S.subStep = 0;
+  if (!S.aiResponses['opposition']) {
+    const r = await getAI('opposition');
+    if (r) { S.aiResponses['opposition'] = r; render(); }
+  }
+}
+
+async function subNext(key, aiKey) {
+  S[key].subs[S.subStep] = g('f-sub')?.value || '';
+  if (S.subStep < 4) {
+    S.subStep++;
+    render();
+  } else {
+    S.subStep = 5;
+    if (S[key].subs[4] && !S[key].term) S[key].term = S[key].subs[4];
+    render();
+    if (!S.aiResponses[aiKey]) {
+      const r = await getAI(aiKey);
+      if (r) { S.aiResponses[aiKey] = r; render(); }
+    }
+  }
+}
+
+function subBack(key, backStep) {
+  if (S.subStep > 0) { S.subStep--; render(); }
+  else { S.step = backStep; S.subStep = 0; render(); }
+}
+
+function saveNegTerm(key, aiKey, backStep) {
+  S[key].term = g('f-neg-term')?.value || '';
+  S[key].description = g('f-neg-desc')?.value || '';
+  S[key].evidence = g('f-neg-evid')?.value || '';
+  if (key === 'notS2') { go(3); S.subStep = 0; }
+  else { go(4); S.subStep = 0; }
+}
+
+async function saveComplex() {
+  S.complex.term = g('f-cx-term')?.value || '';
+  S.complex.description = g('f-cx-desc')?.value || '';
+  go(6);
+  if (!S.aiResponses['complex']) {
+    const r = await getAI('complex');
+    if (r) { S.aiResponses['complex'] = r; render(); }
+  }
+}
+
+async function saveNeutral() {
+  S.neutral.term = g('f-nt-term')?.value || '';
+  S.neutral.description = g('f-nt-desc')?.value || '';
+  go(7);
+  if (!S.aiResponses['neutral']) {
+    const r = await getAI('neutral');
+    if (r) { S.aiResponses['neutral'] = r; render(); }
+  }
+}
+
+function saveReflection() {
+  S.reflection = g('f-reflection')?.value || '';
+  go(9);
+}
+
+function saveDeixis() {
+  S.deixis.posLabel = g('f-pos-label')?.value || '';
+  S.deixis.negLabel = g('f-neg-label')?.value || '';
+  go(5);
+}
+
+function go(n) { S.step = n; render(); }
+
+/* ════════════════════════════════════════════════════════
+   AI RESPONSE BOX
+   ════════════════════════════════════════════════════════ */
+function renderAIBox(key) {
+  const r = S.aiResponses[key];
+  if (!r) return '';
+  const isPlaceholder = !ANTHROPIC_API_KEY;
+  return `<div class="ai-response">
+    <span class="ai-label">Claude's response</span>
+    <div>${r}</div>
+    ${isPlaceholder ? `<div class="ai-placeholder-note">⟡ Placeholder response. Set <code>ANTHROPIC_API_KEY</code> in the script to activate live Socratic feedback.</div>` : ''}
+  </div>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   SIDEBAR
+   ════════════════════════════════════════════════════════ */
+function updateSidebar() {
+  const setTerm = (id, val, cls) => {
+    const el = g(id); if (!el) return;
+    el.textContent = val || '—';
+    el.className = 'mini-term' + (val ? ` ${cls}` : '');
+  };
+  setTerm('sum-s1-term',   S.s1.term,    'filled-acc');
+  setTerm('sum-s2-term',   S.s2.term,    'filled-acc2');
+  setTerm('sum-notb-term', S.notS2.term, 'filled-acc2');
+  setTerm('sum-nota-term', S.notS1.term, 'filled-acc');
+
+  const cx = g('sum-complex');
+  if (cx) {
+    cx.textContent = S.complex.term ? `Complex: ${S.complex.term}` : 'Complex term';
+    cx.className = 'mini-meta' + (S.complex.term ? ' filled' : '');
+  }
+  const nt = g('sum-neutral');
+  if (nt) {
+    nt.textContent = S.neutral.term ? `Neutral: ${S.neutral.term}` : 'Neutral term';
+    nt.className = 'mini-meta' + (S.neutral.term ? ' filled' : '');
+  }
+  const src = g('sum-source');
+  if (src) src.textContent = [S.passageAuthor, S.passageTitle ? `"${S.passageTitle}"` : ''].filter(Boolean).join(' · ') || '—';
+}
+
+/* ════════════════════════════════════════════════════════
+   OUTPUT — Cixous-format square
+   ════════════════════════════════════════════════════════ */
+function renderOutput() {
+  const out = g('output');
+
+  const sourceStr = [
+    S.passageAuthor,
+    S.passageTitle ? `"${S.passageTitle}"` : '',
+    S.passageSource,
+  ].filter(Boolean).join(' · ');
+
+  const reflectionHtml = S.reflection
+    ? S.reflection.split(/\n\n+/).filter(p => p.trim()).map(p => `<p>${p}</p>`).join('')
+    : '';
+
+  out.innerHTML = `
+  <div class="output-toolbar">
+    <button class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
+    <button class="btn" onclick="go(8)">Write reflection →</button>
+    <button class="btn btn-ghost" onclick="go(7)">← Edit</button>
+    <button class="btn btn-ghost" onclick="if(confirm('Start over? All data will be lost.'))location.reload()">Start over</button>
+  </div>
+
+  <div class="page">
+
+    <div class="doc-header">
+      <h1>Semiotic Square Analysis</h1>
+      <div class="source">${esc(sourceStr) || '&nbsp;'}</div>
+      <div class="opposition">Primary opposition:
+        <strong>${esc(S.s1.term)}</strong> (Term A) vs.
+        <strong>${esc(S.s2.term)}</strong> (Term B)
+      </div>
+    </div>
+
+    ${S.passageText ? `
+    <div class="passage" ${S.isPoem ? 'style="white-space:pre-wrap;font-style:normal;"' : ''}>
+      <span class="passage-label">${S.isPoem ? 'Source Poem' : 'Source Passage'}</span>
+      ${esc(S.passageText)}
+    </div>` : ''}
+
+    <!-- COMPLEX TERM -->
+    <div class="meta-top">
+      <span class="meta-label"><span class="num">5.</span> (= 1+2) · Complex Term</span>
+      <div class="meta-term">${esc(S.complex.term) || '—'}</div>
+      <div class="meta-sub">${esc(S.complex.description) || ''}</div>
+    </div>
+
+    <!-- SQUARE WITH DEICTIC LABELS -->
+    <div class="deixis-labels">
+      <div class="deixis-side">
+        <div class="deixis-text pos">7. (= 1+3) · Positive Deixis${S.deixis.posLabel ? ` · ${esc(S.deixis.posLabel)}` : ''}</div>
+      </div>
+
+      <div class="square-body" style="flex:1;position:relative;">
+        <svg class="diagonals" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="0%" y1="0%" x2="100%" y2="100%" stroke="#c8bfa8" stroke-width="0.8" stroke-dasharray="4,4"/>
+          <line x1="100%" y1="0%" x2="0%" y2="100%" stroke="#c8bfa8" stroke-width="0.8" stroke-dasharray="4,4"/>
+        </svg>
+
+        <div class="square-grid" style="grid-template-rows:320px 320px">
+
+          <div class="sq-cell tl">
+            <span class="cell-num">1. Term A</span>
+            <span class="cell-role">S1 · Positive Deixis</span>
+            <div class="cell-term">${esc(S.s1.term)}</div>
+            <div class="cell-desc">${esc(S.s1.description)}</div>
+            ${S.s1.evidence ? `<div class="cell-evidence">${esc(S.s1.evidence)}</div>` : ''}
+          </div>
+
+          <div class="sq-cell tr">
+            <span class="cell-num">2. Term B</span>
+            <span class="cell-role">S2 · Negative Deixis</span>
+            <div class="cell-term">${esc(S.s2.term)}</div>
+            <div class="cell-desc">${esc(S.s2.description)}</div>
+            ${S.s2.evidence ? `<div class="cell-evidence">${esc(S.s2.evidence)}</div>` : ''}
+          </div>
+
+          <div class="sq-cell bl">
+            <span class="cell-num">3. Term Not-B</span>
+            <span class="cell-role">Not-S2 · Positive Deixis</span>
+            <div class="cell-term">${esc(S.notS2.term)}</div>
+            <div class="cell-desc">${esc(S.notS2.description)}</div>
+            ${S.notS2.evidence ? `<div class="cell-evidence">${esc(S.notS2.evidence)}</div>` : ''}
+          </div>
+
+          <div class="sq-cell br">
+            <span class="cell-num">4. Term Not-A</span>
+            <span class="cell-role">Not-S1 · Negative Deixis</span>
+            <div class="cell-term">${esc(S.notS1.term)}</div>
+            <div class="cell-desc">${esc(S.notS1.description)}</div>
+            ${S.notS1.evidence ? `<div class="cell-evidence">${esc(S.notS1.evidence)}</div>` : ''}
+          </div>
+
+        </div>
+      </div>
+
+      <div class="deixis-side">
+        <div class="deixis-text neg">8. (= 2+4) · Negative Deixis${S.deixis.negLabel ? ` · ${esc(S.deixis.negLabel)}` : ''}</div>
+      </div>
+    </div>
+
+    <!-- NEUTRAL TERM -->
+    <div class="meta-bottom">
+      <span class="meta-label"><span class="num">6.</span> (= 3+4) · Neutral Term</span>
+      <div class="meta-term">${esc(S.neutral.term) || '—'}</div>
+      <div class="meta-sub">${esc(S.neutral.description) || ''}</div>
+    </div>
+
+    <div style="height:40px;"></div>
+
+    <!-- RELATIONSHIPS TABLE -->
+    <div class="relations">
+      <div class="relations-title">Logical Relationships in the Square</div>
+      <div class="rel-row">
+        <div class="rel-nums">9. (= 1+4)</div>
+        <div class="rel-type">Contradiction</div>
+        <div class="rel-desc-text">Term A ↔ Not-A: <em>${esc(S.s1.term)}</em> vs. <em>${esc(S.notS1.term)}</em> — the contradiction between the subject position and its active foreclosure</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel-nums">10. (= 2+3)</div>
+        <div class="rel-type">Contradiction</div>
+        <div class="rel-desc-text">Term B ↔ Not-B: <em>${esc(S.s2.term)}</em> vs. <em>${esc(S.notS2.term)}</em> — the contradiction between the object position and its loosening</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel-nums">1 ↔ 2</div>
+        <div class="rel-type">Contrariety</div>
+        <div class="rel-desc-text"><em>${esc(S.s1.term)}</em> vs. <em>${esc(S.s2.term)}</em> — the primary opposition the text is structured around</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel-nums">3 ↔ 4</div>
+        <div class="rel-type">Contrariety</div>
+        <div class="rel-desc-text"><em>${esc(S.notS2.term)}</em> vs. <em>${esc(S.notS1.term)}</em> — the secondary opposition between the two negations</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel-nums">7. Pos. Deixis</div>
+        <div class="rel-type">Complementarity${S.deixis.posLabel ? `<br><span style="font-weight:400;font-style:italic;color:var(--accent);">${esc(S.deixis.posLabel)}</span>` : ''}</div>
+        <div class="rel-desc-text">Term A + Not-B: <em>${esc(S.s1.term)}</em> and <em>${esc(S.notS2.term)}</em> are ideological allies — the exit from the B position is the precondition for the A position</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel-nums">8. Neg. Deixis</div>
+        <div class="rel-type">Complementarity${S.deixis.negLabel ? `<br><span style="font-weight:400;font-style:italic;color:var(--accent2);">${esc(S.deixis.negLabel)}</span>` : ''}</div>
+        <div class="rel-desc-text">Term B + Not-A: <em>${esc(S.s2.term)}</em> and <em>${esc(S.notS1.term)}</em> are ideological allies — they serve the same structure by different means</div>
+      </div>
+    </div>
+
+    ${reflectionHtml ? `
+    <div class="analysis">
+      <h3>Analytical Notes</h3>
+      ${reflectionHtml}
+    </div>` : ''}
+
+    <div style="font-family:'Inconsolata',monospace;font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;border-top:1px solid var(--aged);padding-top:12px;">
+      Square structure adapted from Louis Hébert, <em>Tools for Text and Image Analysis: An Introduction to Applied Semiotics</em>
+    </div>
+
+  </div>`;
+
+}
+
+/* ════════════════════════════════════════════════════════
+   UTILITY
+   ════════════════════════════════════════════════════════ */
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+/* ════════════════════════════════════════════════════════
+   INIT
+   ════════════════════════════════════════════════════════ */
+render();
+</script>
+</body>
+</html>
